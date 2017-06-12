@@ -1,0 +1,118 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//O'Reilly//safaribooksonline.com//
+BEGIN:VEVENT
+SUMMARY:Building Distributed Pipelines for Data Science Using Kafka\, Spar
+ k\, and Cassandra
+DTSTART;VALUE=DATE-TIME:20170828T160000Z
+DTEND;VALUE=DATE-TIME:20170828T190000Z
+DTSTAMP;VALUE=DATE-TIME:20170507T035724Z
+UID:0636920079835-0636920079859
+DESCRIPTION:**Building a distributed pipeline** is a huge—and complex—
+ undertaking. If you want to ensure yours is scalable\, has fast in-memory 
+ processing\, can handle real-time or streaming data feeds with high throug
+ hput and low-latency\, is well suited for ad-hoc queries\, can be spread a
+ cross multiple data centers\, is built to allocate resources efficiently\,
+  and is designed to allow for future changes\, join Andy Petrella and Xavi
+ er Tordoir for this immensely practical hands-on course.\n\nGo to the even
+ t (https://www.safaribooksonline.com/live-training/courses/building-distri
+ buted-pipelines-for-data-science-using-kafka-spark-and-cassandra/063692007
+ 9835/join/)\n
+LOCATION:Online
+ORGANIZER;CN=O´REILLY MEDIA:mailto:donotreply@oreilly.com
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+X-ALT-DESC;FMTTYPE=TEXT/HTML:\n<p><strong>Building a distributed pipeline<
+ /strong> is a huge—and complex—undertaking. If you want to ensure your
+ s is scalable\, has fast in-memory processing\, can handle real-time or st
+ reaming data feeds with high throughput and low-latency\, is well suited f
+ or ad-hoc queries\, can be spread across multiple data centers\, is built 
+ to allocate resources efficiently\, and is designed to allow for future ch
+ anges\, join Andy Petrella and Xavier Tordoir for this immensely practical
+  hands-on course.</p>\n<p><a href="https://www.safaribooksonline.com/live-
+ training/courses/building-distributed-pipelines-for-data-science-using-kaf
+ ka-spark-and-cassandra/0636920079835/join/">Go to the event</a></p>\n
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Building Distributed Pipelines for Data Science Using Kafka\, 
+ Spark\, and Cassandra
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:Building Distributed Pipelines for Data Science Using Kafka\, Spar
+ k\, and Cassandra
+DTSTART;VALUE=DATE-TIME:20170830T160000Z
+DTEND;VALUE=DATE-TIME:20170830T190000Z
+DTSTAMP;VALUE=DATE-TIME:20170507T035724Z
+UID:0636920079835-0636920079873
+DESCRIPTION:**Building a distributed pipeline** is a huge—and complex—
+ undertaking. If you want to ensure yours is scalable\, has fast in-memory 
+ processing\, can handle real-time or streaming data feeds with high throug
+ hput and low-latency\, is well suited for ad-hoc queries\, can be spread a
+ cross multiple data centers\, is built to allocate resources efficiently\,
+  and is designed to allow for future changes\, join Andy Petrella and Xavi
+ er Tordoir for this immensely practical hands-on course.\n\nGo to the even
+ t (https://www.safaribooksonline.com/live-training/courses/building-distri
+ buted-pipelines-for-data-science-using-kafka-spark-and-cassandra/063692007
+ 9835/join/)\n
+LOCATION:Online
+ORGANIZER;CN=O´REILLY MEDIA:mailto:donotreply@oreilly.com
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+X-ALT-DESC;FMTTYPE=TEXT/HTML:\n<p><strong>Building a distributed pipeline<
+ /strong> is a huge—and complex—undertaking. If you want to ensure your
+ s is scalable\, has fast in-memory processing\, can handle real-time or st
+ reaming data feeds with high throughput and low-latency\, is well suited f
+ or ad-hoc queries\, can be spread across multiple data centers\, is built 
+ to allocate resources efficiently\, and is designed to allow for future ch
+ anges\, join Andy Petrella and Xavier Tordoir for this immensely practical
+  hands-on course.</p>\n<p><a href="https://www.safaribooksonline.com/live-
+ training/courses/building-distributed-pipelines-for-data-science-using-kaf
+ ka-spark-and-cassandra/0636920079835/join/">Go to the event</a></p>\n
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Building Distributed Pipelines for Data Science Using Kafka\, 
+ Spark\, and Cassandra
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:Building Distributed Pipelines for Data Science Using Kafka\, Spar
+ k\, and Cassandra
+DTSTART;VALUE=DATE-TIME:20170831T160000Z
+DTEND;VALUE=DATE-TIME:20170831T190000Z
+DTSTAMP;VALUE=DATE-TIME:20170507T035724Z
+UID:0636920079835-0636920079897
+DESCRIPTION:**Building a distributed pipeline** is a huge—and complex—
+ undertaking. If you want to ensure yours is scalable\, has fast in-memory 
+ processing\, can handle real-time or streaming data feeds with high throug
+ hput and low-latency\, is well suited for ad-hoc queries\, can be spread a
+ cross multiple data centers\, is built to allocate resources efficiently\,
+  and is designed to allow for future changes\, join Andy Petrella and Xavi
+ er Tordoir for this immensely practical hands-on course.\n\nGo to the even
+ t (https://www.safaribooksonline.com/live-training/courses/building-distri
+ buted-pipelines-for-data-science-using-kafka-spark-and-cassandra/063692007
+ 9835/join/)\n
+LOCATION:Online
+ORGANIZER;CN=O´REILLY MEDIA:mailto:donotreply@oreilly.com
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+X-ALT-DESC;FMTTYPE=TEXT/HTML:\n<p><strong>Building a distributed pipeline<
+ /strong> is a huge—and complex—undertaking. If you want to ensure your
+ s is scalable\, has fast in-memory processing\, can handle real-time or st
+ reaming data feeds with high throughput and low-latency\, is well suited f
+ or ad-hoc queries\, can be spread across multiple data centers\, is built 
+ to allocate resources efficiently\, and is designed to allow for future ch
+ anges\, join Andy Petrella and Xavier Tordoir for this immensely practical
+  hands-on course.</p>\n<p><a href="https://www.safaribooksonline.com/live-
+ training/courses/building-distributed-pipelines-for-data-science-using-kaf
+ ka-spark-and-cassandra/0636920079835/join/">Go to the event</a></p>\n
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Building Distributed Pipelines for Data Science Using Kafka\, 
+ Spark\, and Cassandra
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
+END:VCALENDAR

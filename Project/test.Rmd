@@ -1,0 +1,183 @@
+---
+title: "Predic422-CharityProject Part 3"
+author: "Artur Mrozowski"
+date: "May 28, 2017"
+output: pdf_document
+---
+
+Load packages required for this code.
+
+```{r}
+# Load packages required for this code.
+library(pROC)
+library(lift)
+library(MASS)
+library(rpart)
+library(caret)
+```
+
+ Exercise 1
+Read Data from CSV File
+```{r}
+charityData = read.csv(file.choose(),na.strings=c("NA"," "))
+```
+Convert categorical variables to factors
+
+```{r}
+charityData$DONR = as.factor(charityData$DONR)
+charityData$HOME = as.factor(charityData$HOME)
+charityData$HINC = as.factor(charityData$HINC)
+
+```
+Rename the dataset to classData for clarity.
+Remove charityData from R session environment
+```{r}
+classData = charityData
+rm(charityData)
+```
+
+
+```{r}
+## Check for Missing Values
+which(sapply(classData,anyNA))
+```
+
+
+```{r}
+# HOME - Make a level 0 and code missing values as 0
+levels(classData$HOME) = c(levels(classData$HOME),"0")
+classData$HOME[is.na(classData$HOME)] = "0"
+table(classData$HOME,useNA="ifany")
+```
+
+
+```{r}
+# HINC - Make a level 0 and code missing values as 0
+levels(classData$HINC) = c(levels(classData$HINC),"0")
+classData$HINC[is.na(classData$HINC)] = "0"
+table(classData$HINC,useNA="ifany")
+```
+
+
+```{r}
+# GENDER - Assign A, J, and NA to category U
+idxMF = classData$GENDER %in% c("M","F")
+classData$GENDER[!idxMF] = "U"
+classData$GENDER = factor(classData$GENDER)
+table(classData$GENDER)
+```
+Part B - Derived or Transformed Variables(Optional)
+
+
+Part C - Re-categorize Variables
+```{r}
+# Separate RFA Values (R = recency, F = frequency, A = amount)
+separateRFA = function(xData,varName)
+{
+  bytes = c("R","F","A")
+  newVarNames = paste(varName,bytes, sep="_")
+  
+  for (ii in 1:length(bytes)) # Loop over 1 to 3 (corresponding to R, F, and A)
+  {
+    # Find the unique values for current byte
+    byteVals = unique(substr(levels(xData[,varName]),ii,ii))
+    
+    for (jj in 1:length(byteVals)) # Loop over unique byte values
+    {
+      rowIdx = substr(xData[,varName],ii,ii) == byteVals[jj]
+      xData[rowIdx,newVarNames[ii]] = byteVals[jj]
+    }
+    
+    xData[,newVarNames[ii]] = factor(xData[,newVarNames[ii]])
+  }
+  
+  return(xData)
+}
+```
+
+
+```{r}
+# Apply separateRFA to the variables RFA_96 and check results.
+
+classData = separateRFA(classData,"RFA_96")
+#table(classData$RFA_96,classData$RFA_96_R)
+#table(classData$RFA_96,classData$RFA_96_F)
+#table(classData$RFA_96,classData$RFA_96_A)
+```
+
+Part D - Drop Variables
+```{r}
+dropIdx = which(names(classData) %in% c("DAMT","RFA_96"))
+
+# Drop the variables indicated by dropIdx.
+classData2 = classData[,-dropIdx]
+names(classData2)   # check that the result is as expected
+```
+Exercise 3
+Dataset Partitioning
+
+```{r}
+# Specify the fraction of data to use in the hold-out test.
+testFraction = 0.25   
+set.seed(123)
+```
+
+
+```{r}
+# Sample training subset indices.
+
+trainIdx = sample(nrow(classData2),size=(1-testFraction)*nrow(classData2),
+                  replace=FALSE)
+```
+Exercise 4
+Model Fitting
+```{r}
+glm.fit=glm(DONR~ AGE+MEDAGE+MEDHVAL+MEDINC+MEDEDUC+NUMPROM+MAXRAMNT +MEDINC+MEDEDUC+ NUMPROM+NUMPRM12+RAMNTALL+NGIFTALL+MAXRAMNT+TDON+LASTGIFT+RFA_96_R+RFA_96_F+RFA_96_A, data=classData2,subset=trainIdx,family=binomial )
+backwards=step(glm.fit,trace=0)
+formula(backwards)
+summary(backwards)
+```
+
+Part A - Simple Logistic Regression
+
+One of the variables with considerable significance is RFA_96_R. I will now fit logistic  regression using that variable. 
+```{r}
+
+#modelA1 = glm(DONR ~ MAXRAMNT,data=classData2,subset=trainIdx,family=binomial)
+modelA1 = glm(DONR ~ RFA_96_F,data=classData2,subset=trainIdx,family=binomial)
+summary(modelA1)
+par(mfrow=c(2,2))
+plot(modelA1)
+par(mfrow=c(1,1))
+```
+
+
+```{r}
+trnProbsA1 = predict(modelA1,type="response")
+hist(trnProbsA1,col="gray")   # Note that scores are distributed around 0.05.
+hist(trnProbsA1,col="gray",xlim=c(0,1))   # Rescale to make obvious.
+
+```
+
+
+```{r}
+# Classification: ROC Curve for Model A1 - Use methods from pROC package.
+rocA1 = roc(response=classData2$DONR[trainIdx],predictor=trnProbsA1)
+par(pty="s")  # sets plotting region to a square, useful for ROC curves
+# Use par(pty="m") to return to default of rectangular plotting region.
+plot(rocA1,col="blue",
+     main=paste("ROC curve for Model A1\nAUC = ",round(rocA1$auc,digits=3),sep=""))
+par(pty="m")
+# Classification: Determine "optimal" threshold.
+dist01 = sqrt((rocA1$specificities-1)^2 + (rocA1$sensitivities-1)^2)
+optIdxA1 = which.min(dist01)  # index corresponding to minimum distance
+threshA1 = rocA1$thresholds[optIdxA1]  # threshold corresponding to min. distance
+points(rocA1$specificities[optIdxA1],rocA1$sensitivities[optIdxA1],col="red",pch=7)
+```
+
+
+```{r}
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

@@ -1,0 +1,451 @@
+---
+title: "Predict422-CharityProject Part 2"
+author: "Artur Mrozowski"
+date: "May 7, 2017"
+output: pdf_document
+---
+
+1. Import Data
+a. Read the data into R from the CSV file
+```{r results=FALSE}
+library(leaps)
+library(glmnet)
+library(pls)
+library(car)
+
+charityData = read.csv(file.choose(),na.strings=c("NA"," "))
+```
+2. Data Preparation
+Convert categorical variables to factors
+
+The lm() method in R can handle a factor variable without us needing to convert 
+the factor to binary dummy variable(s).
+```{r}
+charityData$DONR = as.factor(charityData$DONR)
+charityData$HOME = as.factor(charityData$HOME)
+charityData$HINC = as.factor(charityData$HINC)
+```
+
+ Subset to observations such that DAMT > 0 (and DONR = 1).
+```{r}
+regrData = charityData[charityData$DONR == "1",]
+rm(charityData)
+```
+Check for missing Values
+```{r}
+
+which(sapply(regrData,anyNA))
+```
+HOME - Make a level 0 and code missing values as 0
+```{r}
+
+levels(regrData$HOME) = c(levels(regrData$HOME),"0")
+regrData$HOME[is.na(regrData$HOME)] = "0"
+table(regrData$HOME,useNA="ifany")
+```
+HINC - Make a level 0 and code missing values as 0
+```{r}
+
+levels(regrData$HINC) = c(levels(regrData$HINC),"0")
+regrData$HINC[is.na(regrData$HINC)] = "0"
+table(regrData$HINC,useNA="ifany")
+```
+GENDER - Assign A, J, and NA to category U
+```{r}
+
+idxMF = regrData$GENDER %in% c("M","F")
+regrData$GENDER[!idxMF] = "U"
+regrData$GENDER = factor(regrData$GENDER)
+table(regrData$GENDER,useNA="ifany")
+```
+Part C - Re-categorize Variables
+
+Separate RFA Values (R = recency, F = frequency, A = amount)
+```{r}
+
+
+separateRFA = function(xData,varName)
+{
+  bytes = c("R","F","A")
+  newVarNames = paste(varName,bytes, sep="_")
+  
+  for (ii in 1:length(bytes)) # Loop over 1 to 3 (corresponding to R, F, and A)
+  {
+    # Find the unique values for current byte
+    byteVals = unique(substr(levels(xData[,varName]),ii,ii))
+    
+    for (jj in 1:length(byteVals)) # Loop over unique byte values
+    {
+      rowIdx = substr(xData[,varName],ii,ii) == byteVals[jj]
+      xData[rowIdx,newVarNames[ii]] = byteVals[jj]
+    }
+    
+    xData[,newVarNames[ii]] = factor(xData[,newVarNames[ii]])
+  }
+  
+  return(xData)
+}
+```
+
+```{r results=FALSE}
+regrData = separateRFA(regrData,"RFA_96")
+#table(regrData$RFA_96,regrData$RFA_96_R)
+#table(regrData$RFA_96,regrData$RFA_96_F)
+#table(regrData$RFA_96,regrData$RFA_96_A)
+```
+Drop the variables indicated by dropIdx.
+```{r}
+dropIdx = which(names(regrData) %in% c("DONR","RFA_96"))
+
+
+regrData2 = regrData[,-dropIdx]
+names(regrData2)
+```
+3. Dataset Partitioning
+For this assignment, you will employ a hold-out test dataset for model validation and selection.
+a. Hold-Out Test Set
+
+b. Training Set 75%
+
+```{r}
+# Specify the fraction of data to use in the hold-out test.
+testFraction = 0.25   
+set.seed(123)
+```
+
+```{r}
+# Sample training subset indices.
+# - the index vector has length equal to the size of the sampled set
+# - the index values are integer, representing the row numbers to use for the sample
+trainIdx = sample(nrow(regrData2),size=(1-testFraction)*nrow(regrData2),
+                  replace=FALSE)
+```
+4. Model Fitting
+a. Simple linear regression (ISLR Section 3.1) [Recall that simple linear regression is regression with a single
+predictor variable.]
+```{r}
+
+modelA1 = lm(DAMT ~ LASTGIFT,data=regrData2,subset=trainIdx)
+summary(modelA1)
+par(mfrow=c(2,2))
+plot(modelA1)
+par(mfrow=c(1,1))
+```
+b. Multiple linear regression with subset selection (ISLR Section 6.1)
+Full Regression Model
+```{r}
+
+modelB1 = lm(DAMT ~ .-ID,data=regrData2,subset=trainIdx)
+summary(modelB1)
+```
+Checking collinearility. Less than 10 so it seems ok.
+```{r}
+vif(modelB1)
+```
+
+```{r}
+
+
+
+regfit.fwd=regsubsets (DAMT ~ .-ID,data=regrData2[trainIdx,] ,nvmax =20,method ="forward")
+```
+
+```{r}
+summary(regfit.fwd)
+```
+Let see the best 4 variables model
+```{r}
+coef(regfit.fwd,4)
+```
+Fitting the model with 4 variables. The final model.
+```{r}
+modelB2 = lm(DAMT ~ MAXRAMNT+LASTGIFT+RFA_96_F+RFA_96_A,data=regrData2,subset=trainIdx)
+```
+
+```{r}
+summary(modelB2)
+coef(modelB2)
+```
+Checking collinearility. Less than 10 so it seems ok.
+```{r}
+vif(modelB2)
+```
+
+```{r}
+
+```
+The main function in this package is glmnet(), which can be used
+glmnet()
+to fit ridge regression models, lasso models, and more.
+In particular, we must pass in an x
+matrix as well as a y vector.
+
+
+c. Shrinkage models (ISLR Section 6.2) or Principal Components Regressions (ISLR Section 6.3)
+```{r}
+
+regX = model.matrix(DAMT ~ .-ID,data=regrData2)[,-1]
+regY = regrData2$DAMT
+cvLasso = cv.glmnet(regX[trainIdx,],regY[trainIdx],alpha=1)
+plot(cvLasso)
+
+```
+
+```{r}
+
+modelC1 = glmnet(regX[trainIdx,],regY[trainIdx],alpha=1,lambda=cvLasso$lambda.min)
+coef(modelC1)
+
+```
+
+In lasso the resulting coefficient estimates are sparse. So the resulting lasso model contains only six variables
+```{r}
+bestlam=cvLasso$lambda.min
+lasso.coef=predict (modelC1 ,type ="coefficients",s=bestlam )[1:20 ,]
+lasso.coef
+lasso.coef[lasso.coef !=0]
+```
+
+```{r}
+modelC2 = glmnet(regX[trainIdx,],regY[trainIdx],alpha=1,lambda=cvLasso$lambda.1se)
+coef(modelC2)
+
+```
+
+In this model only intercept is used?
+```{r}
+bestlam=cvLasso$lambda.1se
+lasso.coef=predict (modelC2 ,type ="coefficients",s=bestlam )[1:20 ,]
+lasso.coef
+lasso.coef[lasso.coef !=0]
+```
+d. Another model of your choice, which may include a second model from one of the three prior categories
+I will illustrate Principal Components Regression here.
+```{r}
+pcrFit=pcr(DAMT~.-ID,data=regrData2,subset=trainIdx,ncomp=20,validation ="CV")
+summary(pcrFit)
+validationplot(pcrFit,val.type="MSEP")
+```
+
+The variance explained at 8 components is 53.70% and at 12 components is 
+56.11%. 
+```{r}
+
+modelD1 = pcr(DAMT~.-ID,data=regrData2,subset=trainIdx,ncomp=8)
+summary(modelD1)
+
+```
+5. Model Validation
+
+```{r}
+calcMSE = function(model,modelLabel,dataSet,trainIdx,newX=NULL,ncomp=NULL)
+{
+  # The predict method for glmnet will need to be called differently from the
+  # other predict methods.
+  if ("glmnet" %in% class(model)) {
+    predVals = predict(model,newX,type="response")
+  } else if ("mvr" %in% class(model)) {
+    predVals = predict(model,dataSet,ncomp=ncomp)
+  } else {
+    predVals = predict(model,dataSet)
+  }
+  MSE = list(
+    name = modelLabel,
+    train = mean( (predVals[trainIdx] - dataSet$DAMT[trainIdx])^2 ),
+    test = mean( (predVals[-trainIdx] - dataSet$DAMT[-trainIdx])^2 )
+  )
+  
+  return(MSE)
+}
+
+numModels = 6   # number of models that I have fit (A1, B1, B2, C1, C2, and D1)
+modelMSEs = data.frame(
+  Model = rep(NA,numModels),
+  Train.MSE = rep(NA,numModels),
+  Test.MSE = rep(NA,numModels)
+  )
+
+modelMSEs[1,] = calcMSE(modelA1,"A1",regrData2,trainIdx)
+modelMSEs[2,] = calcMSE(modelB1,"B1",regrData2,trainIdx)
+modelMSEs[3,] = calcMSE(modelB2,"B2",regrData2,trainIdx)
+modelMSEs[4,] = calcMSE(modelC1,"C1",regrData2,trainIdx,newX=regX)
+modelMSEs[5,] = calcMSE(modelC2,"C2",regrData2,trainIdx,newX=regX)
+modelMSEs[6,] = calcMSE(modelD1,"D1",regrData2,trainIdx,ncomp=8)
+
+print(modelMSEs)
+```
+I think the model B1 is the best model with the lowest bias as well as variance of the errors. Althoud  both models C1 and C2 get pretty close. C2 contains less variables than any of the other models but B1 has lower Test MSE.
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+

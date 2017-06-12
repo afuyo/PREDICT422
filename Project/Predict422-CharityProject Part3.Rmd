@@ -1,0 +1,438 @@
+---
+title: "Predic422-CharityProject Part 3"
+author: "Artur Mrozowski"
+date: "May 28, 2017"
+output: pdf_document
+---
+
+Load packages required for this code.
+
+```{r}
+# Load packages required for this code.
+library(pROC)
+library(lift)
+library(MASS)
+library(rpart)
+library(caret)
+```
+
+ Exercise 1
+Read Data from CSV File
+```{r}
+charityData = read.csv(file.choose(),na.strings=c("NA"," "))
+```
+Convert categorical variables to factors
+
+```{r}
+charityData$DONR = as.factor(charityData$DONR)
+charityData$HOME = as.factor(charityData$HOME)
+charityData$HINC = as.factor(charityData$HINC)
+
+```
+Rename the dataset to classData for clarity.
+Remove charityData from R session environment
+```{r}
+classData = charityData
+classData=charityData[charityData$DONR == "1",]
+rm(charityData)
+```
+
+
+```{r}
+## Check for Missing Values
+which(sapply(classData,anyNA))
+```
+
+
+```{r}
+# HOME - Make a level 0 and code missing values as 0
+levels(classData$HOME) = c(levels(classData$HOME),"0")
+classData$HOME[is.na(classData$HOME)] = "0"
+table(classData$HOME,useNA="ifany")
+```
+
+
+```{r}
+# HINC - Make a level 0 and code missing values as 0
+levels(classData$HINC) = c(levels(classData$HINC),"0")
+classData$HINC[is.na(classData$HINC)] = "0"
+table(classData$HINC,useNA="ifany")
+```
+
+
+```{r}
+# GENDER - Assign A, J, and NA to category U
+idxMF = classData$GENDER %in% c("M","F")
+classData$GENDER[!idxMF] = "U"
+classData$GENDER = factor(classData$GENDER)
+table(classData$GENDER)
+```
+Part B - Derived or Transformed Variables(Optional)
+
+
+Part C - Re-categorize Variables
+```{r}
+# Separate RFA Values (R = recency, F = frequency, A = amount)
+separateRFA = function(xData,varName)
+{
+  bytes = c("R","F","A")
+  newVarNames = paste(varName,bytes, sep="_")
+  
+  for (ii in 1:length(bytes)) # Loop over 1 to 3 (corresponding to R, F, and A)
+  {
+    # Find the unique values for current byte
+    byteVals = unique(substr(levels(xData[,varName]),ii,ii))
+    
+    for (jj in 1:length(byteVals)) # Loop over unique byte values
+    {
+      rowIdx = substr(xData[,varName],ii,ii) == byteVals[jj]
+      xData[rowIdx,newVarNames[ii]] = byteVals[jj]
+    }
+    
+    xData[,newVarNames[ii]] = factor(xData[,newVarNames[ii]])
+  }
+  
+  return(xData)
+}
+```
+
+
+```{r}
+# Apply separateRFA to the variables RFA_96 and check results.
+
+classData = separateRFA(classData,"RFA_96")
+#table(classData$RFA_96,classData$RFA_96_R)
+#table(classData$RFA_96,classData$RFA_96_F)
+#table(classData$RFA_96,classData$RFA_96_A)
+```
+
+Part D - Drop Variables
+```{r}
+dropIdx = which(names(classData) %in% c("DAMT","RFA_96"))
+
+# Drop the variables indicated by dropIdx.
+classData2 = classData[,-dropIdx]
+names(classData2)   # check that the result is as expected
+```
+Exercise 3
+Dataset Partitioning
+
+```{r}
+# Specify the fraction of data to use in the hold-out test.
+testFraction = 0.25   
+set.seed(123)
+```
+
+
+```{r}
+# Sample training subset indices.
+
+trainIdx = sample(nrow(classData2),size=(1-testFraction)*nrow(classData2),
+                  replace=FALSE)
+```
+Exercise 4
+Model Fitting
+```{r}
+glm.fit=glm(DONR~ AGE+MEDAGE+MEDHVAL+MEDINC+MEDEDUC+NUMPROM+MAXRAMNT +MEDINC+MEDEDUC+ NUMPROM+NUMPRM12+RAMNTALL+NGIFTALL+MAXRAMNT+TDON+LASTGIFT+RFA_96_R+RFA_96_F+RFA_96_A, data=classData2,subset=trainIdx,family=binomial )
+backwards=step(glm.fit,trace=0)
+formula(backwards)
+summary(backwards)
+```
+
+Part A - Simple Logistic Regression
+
+One of the variables with considerable significance is RFA_96_R. I will now fit logistic  regression using that variable. 
+```{r}
+
+#modelA1 = glm(DONR ~ MAXRAMNT,data=classData2,subset=trainIdx,family=binomial)
+modelA1 = glm(DONR ~ RFA_96_F,data=classData2,subset=trainIdx,family=binomial)
+summary(modelA1)
+par(mfrow=c(2,2))
+plot(modelA1)
+par(mfrow=c(1,1))
+```
+
+
+```{r}
+trnProbsA1 = predict(modelA1,type="response")
+hist(trnProbsA1,col="gray")   # Note that scores are distributed around 0.05.
+hist(trnProbsA1,col="gray",xlim=c(0,1))   # Rescale to make obvious.
+
+```
+
+
+```{r}
+# Classification: ROC Curve for Model A1 - Use methods from pROC package.
+rocA1 = roc(response=classData2$DONR[trainIdx],predictor=trnProbsA1)
+par(pty="s")  # sets plotting region to a square, useful for ROC curves
+# Use par(pty="m") to return to default of rectangular plotting region.
+plot(rocA1,col="blue",
+     main=paste("ROC curve for Model A1\nAUC = ",round(rocA1$auc,digits=3),sep=""))
+par(pty="m")
+# Classification: Determine "optimal" threshold.
+dist01 = sqrt((rocA1$specificities-1)^2 + (rocA1$sensitivities-1)^2)
+optIdxA1 = which.min(dist01)  # index corresponding to minimum distance
+threshA1 = rocA1$thresholds[optIdxA1]  # threshold corresponding to min. distance
+points(rocA1$specificities[optIdxA1],rocA1$sensitivities[optIdxA1],col="red",pch=7)
+# Ranking: Generate lift chart on training subset and measure top-decile lift.
+plotLift(trnProbsA1,classData2$DONR[trainIdx])
+TopDecileLift(trnProbsA1,classData2$DONR[trainIdx])
+```
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+Part B - Linear Discriminant Analysis
+
+I will use caret package in order to choose the best 4 variables for LDA. Let's see how it works
+```{r}
+c_1 <- trainControl(method = "none")
+maxvar     <-(4) 
+direction <-"forward"
+tune_1     <-data.frame(maxvar,direction)
+tr <- train(DONR~., data=classData2, method = "stepLDA", trControl=c_1, tuneGrid=tune_1)
+```
+
+It is hard to choose any variable because the model seemingly have greate performance. 95% correct values. The number of TP equals to zero so the results are not very helpful. The number of donors is very low so rather pessimistic assumption that nobody will give anything generates high score, no matter what variable is used. I choose AGE for the model but it could by anything. 
+```{r}
+modelB1 = lda(DONR~ AGE, data=classData2,
+              subset=trainIdx)
+```
+
+
+```{r}
+modelB1
+predB1 = predict(modelB1,classData2[trainIdx,])
+trnProbsB1 = predB1$posterior[,2]   # column 2 corresponds to Pr(DONR = 1)
+```
+
+
+```{r}
+# Similar to modelA1, we explore the probabilities and build a ROC curve 
+# for modelB1.
+hist(trnProbsB1,col="gray")   # Note that scores are distributed around 0.05.
+hist(trnProbsB1,col="gray",xlim=c(0,1))   # Rescale to make obvious.
+```
+
+```{r}
+# Classification: ROC Curve for Model B1 - Use methods from pROC package.
+rocB1 = roc(response=classData2$DONR[trainIdx],predictor=trnProbsB1)
+par(pty="s")  # sets plotting region to a square, useful for ROC curves
+# Use par(pty="m") to return to default of rectangular plotting region.
+plot(rocB1,col="blue",
+     main=paste("ROC curve for Model B1\nAUC = ",round(rocB1$auc,digits=3),sep=""))
+par(pty="m")
+# Classification: Determine "optimal" threshold.
+#dist01 = sqrt((rocB1$specificities-1)^2 + (rocB1$sensitivities-1)^2)
+dist01=  sqrt((0.68*(rocA1$specificities-1))^2 + (15.62*(rocA1$sensitivities-1)^2))
+optIdxB1 = which.min(dist01)  # index corresponding to minimum distance
+threshB1 = rocB1$thresholds[optIdxB1]  # threshold corresponding to min. distance
+points(rocB1$specificities[optIdxB1],rocB1$sensitivities[optIdxB1],col="red",pch=7)
+```
+
+Let's incorporacte relative weights in optimal threshold
+```{r}
+
+```
+
+
+```{r}
+# Ranking: Generate lift chart on training subset and measure top-decile lift.
+plotLift(trnProbsB1,classData2$DONR[trainIdx])
+TopDecileLift(trnProbsB1,classData2$DONR[trainIdx])
+```
+
+Part C - Tree-Based Models
+```{r}
+fullTree = rpart(DONR ~  NGIFTALL + MAXRAMNT + LASTGIFT + TDON,
+                data=classData2,subset=trainIdx,method="class",
+                parms=list(split="gini",loss=matrix(c(0,15.62,0.68,0),nrow=2,ncol=2)))
+                
+```
+
+
+```{r}
+summary(fullTree)
+plot(fullTree)
+text(fullTree)
+```
+
+```{r}
+# Prune the tree
+printcp(fullTree)
+cpBest = fullTree$cptable[which.min(fullTree$cptable[,"xerror"]),"CP"]
+modelC1 = prune(fullTree,cp=cpBest) # In this case, the optimal tree is the unpruned tree
+summary(modelC1)
+plot(modelC1)
+text(modelC1,pretty=0)
+```
+
+
+```{r}
+# Ranking: Generate lift chart on training subset and measure top-decile lift.
+trnProbsC1 = predict(modelC1,newdata=classData2[trainIdx,],type="prob")[,2]
+plotLift(trnProbsB1,classData2$DONR[trainIdx])
+TopDecileLift(trnProbsB1,classData2$DONR[trainIdx])
+```
+
+Part D - Model of your choice.
+
+I will use the best model as selected in the stepwise backwards selection for logistic regression. 
+```{r}
+backwards$formula
+summary(backwards)
+```
+ I would be inclined to drop RFA_96_A
+
+```{r}
+modelD1=glm(DONR ~ AGE + MEDAGE + MEDHVAL + MEDINC + NUMPROM + NUMPRM12 + RAMNTALL + TDON + RFA_96_F ,data=classData2,subset=trainIdx,family=binomial )
+modelD1.probs=predict(modelD1,type="response")
+head(modelD1.probs)
+summary(modelD1)
+```
+
+
+```{r}
+trnProbsD1 = predict(modelD1,type="response")
+hist(trnProbsD1,col="gray")   # Note that scores are distributed around 0.05.
+hist(trnProbsD1,col="gray",xlim=c(0,1))   # Rescale to make obvious.
+```
+
+```{r}
+# Classification: ROC Curve for Model D1 - Use methods from pROC package.
+rocD1 = roc(response=classData2$DONR[trainIdx],predictor=trnProbsD1)
+par(pty="s")  # sets plotting region to a square, useful for ROC curves
+# Use par(pty="m") to return to default of rectangular plotting region.
+plot(rocD1,col="blue",
+     main=paste("ROC curve for Model D1\nAUC = ",round(rocD1$auc,digits=3),sep=""))
+par(pty="m")
+
+
+dist01 = sqrt((rocD1$specificities-1)^2 + (rocD1$sensitivities-1)^2)
+optIdxD1 = which.min(dist01)  # index corresponding to minimum distance
+threshD1 = rocD1$thresholds[optIdxD1]  # threshold corresponding to min. distance
+points(rocD1$specificities[optIdxD1],rocD1$sensitivities[optIdxD1],col="red",pch=7)
+```
+
+Exercise 5
+Model Validation
+```{r}
+assignClass = function(probVals,threshVal)
+{
+  predVals = rep(0,length(probVals))
+  predVals[probVals > threshVal] = 1
+  predVals = factor(predVals)
+  
+  return(predVals)
+}
+
+calcMetrics = function(targetVals,predVals)
+{
+  confMat = table(targetVals,predVals,dnn=c("Target","Predicted"))
+  
+  classResults = list(
+    confMat = confMat,
+    TPrate = round(confMat[2,2] / sum(confMat[2,]),digits=4),
+    FPrate = round(confMat[1,2] / sum(confMat[1,]),digits=4),
+    accuracy = round(mean(targetVals == predVals),digits=2),
+    topDecileLift = TopDecileLift(predVals,targetVals)
+  )
+  
+  return(classResults)
+}
+
+calcResults = function(model,modelLabel,dataSet,trainIdx,threshVal=NULL)
+{
+  if (!is.null(threshVal) & "glm" %in% class(model)) {
+    # Predict for glm models
+    probVals = predict(model,dataSet,type="response")
+    predVals = assignClass(probVals,threshVal)
+  } else if (length(intersect(class(model),c("tree","rpart","randomForest")) > 0)) {
+    # Predict for tree, rpart, randomForest models
+    predVals = predict(model,dataSet,type="class")
+  } else if (length(intersect(class(model),c("lda")) > 0)) {
+    # Predict for lda models
+    predVals = predict(model,dataSet)$class
+  } else if (length(intersect(class(model),c("svm")) > 0)) {
+    # Predict for svm models
+    predVals = predict(model,dataSet)
+  }
+    
+  results = list(
+    name = modelLabel,
+    train = calcMetrics(classData2$DONR[trainIdx],predVals[trainIdx]),
+    test = calcMetrics(classData2$DONR[-trainIdx],predVals[-trainIdx])
+  )
+  
+  return(results)
+}
+```
+
+You can also embed plots, for example:
+
+```{r}
+nModels = 4 # Number of models you fit. I fit 3 models in this sample code.
+naTmp = rep(NA,nModels) # Code short-hand.
+nanTmp = rep(NaN,nModels)
+modelMetrics = data.frame(
+  Model = naTmp,
+  Train.Accuracy = nanTmp, Train.TP = nanTmp, Train.FP = nanTmp, Train.Lift = nanTmp,
+  Test.Accuracy = nanTmp, Test.TP = nanTmp, Test.FP = nanTmp, Test.Lift = nanTmp
+  )
+```
+
+```{r}
+resultsA1 = calcResults(modelA1,"A1",classData2,trainIdx,threshA1)
+print(resultsA1$test$confMat)
+modelMetrics[1,] = c(resultsA1$name,
+                     resultsA1$train$accuracy,resultsA1$train$TPrate,resultsA1$train$FPrate,resultsA1$train$topDecileLift,
+                     resultsA1$test$accuracy,resultsA1$test$TPrate,resultsA1$test$FPrate,resultsA1$test$topDecileLift)
+
+resultsB1 = calcResults(modelB1,"B1",classData2,trainIdx,threshB1)
+print(resultsB1$test$confMat)
+modelMetrics[2,] = c(resultsB1$name,
+                     resultsB1$train$accuracy,resultsB1$train$TPrate,resultsB1$train$FPrate,resultsB1$train$topDecileLift,
+                     resultsB1$test$accuracy,resultsB1$test$TPrate,resultsB1$test$FPrate,resultsB1$test$topDecileLift)
+
+resultsC1 = calcResults(modelC1,"C1",classData2,trainIdx)
+print(resultsC1$test$confMat)
+modelMetrics[3,] = c(resultsC1$name,
+                     resultsC1$train$accuracy,resultsC1$train$TPrate,resultsC1$train$FPrate,resultsC1$train$topDecileLift,
+                     resultsC1$test$accuracy,resultsC1$test$TPrate,resultsC1$test$FPrate,resultsC1$test$topDecileLift)
+
+resultsD1 = calcResults(modelD1,"D1",classData2,trainIdx,threshD1)
+print(resultsD1$test$confMat)
+modelMetrics[4,] = c(resultsD1$name,
+                     resultsD1$train$accuracy,resultsD1$train$TPrate,resultsD1$train$FPrate,resultsD1$train$topDecileLift,
+                     resultsD1$test$accuracy,resultsD1$test$TPrate,resultsD1$test$FPrate,resultsD1$test$topDecileLift)
+print(modelMetrics)
+```
+6 Model Selection
+a. LDA has the best score but zero true positive, which makes it pretty much useless for the purpose of predicting donors. Probability of anyone becoming a donor is so low that classifying everyone as not-donors yields the highest score. 
+
+Random forest has the high number of trup positive but it comes at price of high number of false positives which could potentially make a campaign quite expensive. 
+b. Which leaves us with the logistic regression models, that considering all the aspcts mentioned above, have the best performance. ModelD1 has got the best accuracy and is the model I'd choose. 
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+

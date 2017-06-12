@@ -1,0 +1,130 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//O'Reilly//safaribooksonline.com//
+BEGIN:VEVENT
+SUMMARY:Introduction to TensorFlow
+DTSTART;VALUE=DATE-TIME:20170808T170000Z
+DTEND;VALUE=DATE-TIME:20170808T190000Z
+DTSTAMP;VALUE=DATE-TIME:20170507T035507Z
+UID:0636920081470-0636920081494
+DESCRIPTION:Get started with machine learning using TensorFlow\, the popul
+ ar open source machine-learning software developed by Google’s Brain tea
+ m.\n\nIn this online course\, you’ll learn core concepts in machine lear
+ ning and TensorFlow with a focus on neural networks. You&#39\;ll gain expe
+ rience working with TensorFlow’s collection of visualization tools\, inc
+ luding building and launching graphs in TensorFlow and using TensorBoard t
+ o visualize workflow and evaluate model performance. The instructors use  
+ notebooks with interactive code segments to guide you as you apply machine
+ -learning concepts and build algorithms that make predictions using real-w
+ orld datasets. By the end of the course\, you’ll know how and when to us
+ e TensorFlow in your own applications.\n\n\nGo to the event (https://www.s
+ afaribooksonline.com/live-training/courses/introduction-to-tensorflow/0636
+ 920081470/join/)\n
+LOCATION:Online
+ORGANIZER;CN=O´REILLY MEDIA:mailto:donotreply@oreilly.com
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+X-ALT-DESC;FMTTYPE=TEXT/HTML:\n<p>Get started with machine learning using 
+ TensorFlow\, the popular open source machine-learning software developed b
+ y Google’s Brain team.</p>\n<p>In this online course\, you’ll learn co
+ re concepts in machine learning and TensorFlow with a focus on neural netw
+ orks. You'll gain experience working with TensorFlow’s collection of vis
+ ualization tools\, including building and launching graphs in TensorFlow a
+ nd using TensorBoard to visualize workflow and evaluate model performance.
+  The instructors use  notebooks with interactive code segments to guide yo
+ u as you apply machine-learning concepts and build algorithms that make pr
+ edictions using real-world datasets. By the end of the course\, you’ll k
+ now how and when to use TensorFlow in your own applications.</p>\n<p><a hr
+ ef="https://www.safaribooksonline.com/live-training/courses/introduction-t
+ o-tensorflow/0636920081470/join/">Go to the event</a></p>\n
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Introduction to TensorFlow
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:Introduction to TensorFlow
+DTSTART;VALUE=DATE-TIME:20170809T170000Z
+DTEND;VALUE=DATE-TIME:20170809T190000Z
+DTSTAMP;VALUE=DATE-TIME:20170507T035507Z
+UID:0636920081470-0636920081517
+DESCRIPTION:Get started with machine learning using TensorFlow\, the popul
+ ar open source machine-learning software developed by Google’s Brain tea
+ m.\n\nIn this online course\, you’ll learn core concepts in machine lear
+ ning and TensorFlow with a focus on neural networks. You&#39\;ll gain expe
+ rience working with TensorFlow’s collection of visualization tools\, inc
+ luding building and launching graphs in TensorFlow and using TensorBoard t
+ o visualize workflow and evaluate model performance. The instructors use  
+ notebooks with interactive code segments to guide you as you apply machine
+ -learning concepts and build algorithms that make predictions using real-w
+ orld datasets. By the end of the course\, you’ll know how and when to us
+ e TensorFlow in your own applications.\n\n\nGo to the event (https://www.s
+ afaribooksonline.com/live-training/courses/introduction-to-tensorflow/0636
+ 920081470/join/)\n
+LOCATION:Online
+ORGANIZER;CN=O´REILLY MEDIA:mailto:donotreply@oreilly.com
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+X-ALT-DESC;FMTTYPE=TEXT/HTML:\n<p>Get started with machine learning using 
+ TensorFlow\, the popular open source machine-learning software developed b
+ y Google’s Brain team.</p>\n<p>In this online course\, you’ll learn co
+ re concepts in machine learning and TensorFlow with a focus on neural netw
+ orks. You'll gain experience working with TensorFlow’s collection of vis
+ ualization tools\, including building and launching graphs in TensorFlow a
+ nd using TensorBoard to visualize workflow and evaluate model performance.
+  The instructors use  notebooks with interactive code segments to guide yo
+ u as you apply machine-learning concepts and build algorithms that make pr
+ edictions using real-world datasets. By the end of the course\, you’ll k
+ now how and when to use TensorFlow in your own applications.</p>\n<p><a hr
+ ef="https://www.safaribooksonline.com/live-training/courses/introduction-t
+ o-tensorflow/0636920081470/join/">Go to the event</a></p>\n
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Introduction to TensorFlow
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:Introduction to TensorFlow
+DTSTART;VALUE=DATE-TIME:20170810T170000Z
+DTEND;VALUE=DATE-TIME:20170810T190000Z
+DTSTAMP;VALUE=DATE-TIME:20170507T035507Z
+UID:0636920081470-0636920081531
+DESCRIPTION:Get started with machine learning using TensorFlow\, the popul
+ ar open source machine-learning software developed by Google’s Brain tea
+ m.\n\nIn this online course\, you’ll learn core concepts in machine lear
+ ning and TensorFlow with a focus on neural networks. You&#39\;ll gain expe
+ rience working with TensorFlow’s collection of visualization tools\, inc
+ luding building and launching graphs in TensorFlow and using TensorBoard t
+ o visualize workflow and evaluate model performance. The instructors use  
+ notebooks with interactive code segments to guide you as you apply machine
+ -learning concepts and build algorithms that make predictions using real-w
+ orld datasets. By the end of the course\, you’ll know how and when to us
+ e TensorFlow in your own applications.\n\n\nGo to the event (https://www.s
+ afaribooksonline.com/live-training/courses/introduction-to-tensorflow/0636
+ 920081470/join/)\n
+LOCATION:Online
+ORGANIZER;CN=O´REILLY MEDIA:mailto:donotreply@oreilly.com
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+X-ALT-DESC;FMTTYPE=TEXT/HTML:\n<p>Get started with machine learning using 
+ TensorFlow\, the popular open source machine-learning software developed b
+ y Google’s Brain team.</p>\n<p>In this online course\, you’ll learn co
+ re concepts in machine learning and TensorFlow with a focus on neural netw
+ orks. You'll gain experience working with TensorFlow’s collection of vis
+ ualization tools\, including building and launching graphs in TensorFlow a
+ nd using TensorBoard to visualize workflow and evaluate model performance.
+  The instructors use  notebooks with interactive code segments to guide yo
+ u as you apply machine-learning concepts and build algorithms that make pr
+ edictions using real-world datasets. By the end of the course\, you’ll k
+ now how and when to use TensorFlow in your own applications.</p>\n<p><a hr
+ ef="https://www.safaribooksonline.com/live-training/courses/introduction-t
+ o-tensorflow/0636920081470/join/">Go to the event</a></p>\n
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Introduction to TensorFlow
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
+END:VCALENDAR

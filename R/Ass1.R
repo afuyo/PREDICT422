@@ -1,0 +1,5 @@
+library(ISLR)
+data("College")
+library(psych)
+describe(college)
+nrow(college)

@@ -1,0 +1,477 @@
+---
+title: "Predict422-CharityProject Part4"
+author: "Artur Mrozowski"
+date: "May 31, 2017"
+output: pdf_document
+---
+
+
+
+```{r}
+# Load packages required for this code.
+library(glmnet)
+
+```
+
+1. Import Data
+a. Read the data into R from the CSV file valSample.csv the same as you did in Part 1 Exercise 1.
+b. Subset the data to only those observations where DONR = 1. This set of observations will be the data used
+for this assignment (Part 2, The Regression Problem). Name this dataset valData.
+```{r}
+inPath = file.path("C:\\playground\\Predict422\\Project\\Part4\\")
+
+valDataIn = read.csv(file.path(inPath,"valSample.csv"),na.strings=c("NA"," "))
+#valData = valDataIn[valDataIn$DONR == "1",]
+valData=valDataIn
+rm(valDataIn)
+
+```
+
+
+```{r}
+# Convert categorical variables to factors
+# This is highly recommended so that R treats the variables appropriately.
+# The lm() method in R can handle a factor variable without us needing to convert 
+# the factor to binary dummy variable(s).
+valData$DONR = as.factor(valData$DONR)
+valData$HOME = as.factor(valData$HOME)
+valData$HINC = as.factor(valData$HINC)
+```
+2. Predictions on Validation Set
+a. Review the data preparation steps you took in Part 2 of the project. Apply those same data preparation steps
+to valData.
+```{r}
+
+codePath = file.path("C:\\playground\\Predict422\\Project\\Part4\\")
+source(file.path(codePath,"DataPreparation.R"))
+
+valDataPart2 = processPart2(valData)
+```
+
+b. Using the model you chose from Part 2 (as trained on the Regression Training Set from Part 2), predict
+DAMT on the data coming from Step 2a.
+```{r}
+# Note that RFA_96_A for valData does not include the level "B". I had to do some 
+# investigating to track down an error that originated from this fact. Therefore, we
+# will add the level so that we don't have problems with making predictions.
+levels(valDataPart2$RFA_96_A) = c(levels(valDataPart2$RFA_96_A), "B")
+
+
+```
+
+
+```{r}
+modelPath = file.path("C:\\playground\\Predict422\\Project\\Part4\\")
+load(file.path(modelPath,"modelPart2.RData"))
+```
+
+
+```{r}
+valData$DAMT.Pred = as.numeric(predict(modelPart2,newdata=valDataPart2))
+
+# Check the predictions as a sanity check
+hist(valData$DAMT.Pred,xlab="DAMT",main="Validation Set",col="gray",breaks=50)
+par(pty="s")
+plot(valData$DAMT,valData$DAMT.Pred,xlab="Target DAMT",ylab="Predicted DAMT",
+     main="Validation Set")
+abline(0,1,col="red")
+par(pty="m")
+```
+
+c. Review the data preparation steps you took in Part 3 of the project. Apply those same data preparation steps
+to valData.
+```{r}
+valDataPart3 = processPart3(valData)
+levels(valDataPart3$RFA_96_A) = c(levels(valDataPart3$RFA_96_A), "B")
+```
+
+d. Using the model you chose from Part 3 (as trained on the Classification Training Set from Part 3), predict
+DONR and PDONR on the data coming from Step 2c.
+```{r}
+load(file.path(modelPath,"modelPart3.RData"))
+```
+
+
+```{r}
+assignClass = function(probVals,threshVal)
+{
+  predVals = rep(0,length(probVals))
+  predVals[probVals > threshVal] = 1
+  predVals = factor(predVals)
+  
+  return(predVals)
+}
+```
+
+
+```{r}
+# Further note that for a logistic regression model, the probabilities (PDONR) come 
+# from predict.glm and the classifications (DONR) come from applying the optimal threshold.
+# Each predict method should have some means of obtaining the probabilities. You
+# will have to check the documentation for the type of model you are using to 
+# determine the appropriate syntax.
+valData$PDONR.Pred = predict(modelPart3,newdata=valDataPart3,type="response")
+valData$DONR.Pred = assignClass(valData$PDONR.Pred,optThreshPart3)
+```
+
+
+```{r}
+# Check the predictions as a sanity check
+table(valData$DONR,valData$DONR.Pred,dnn=c("Target","Predicted"))
+hist(valData$PDONR.Pred,xlab="P(DONR=1)",main="Validation Set",col="gray",breaks=50,
+     xlim=c(0,1))
+plot(valData$DONR,valData$PDONR.Pred,xlab="Target DONR Value",
+     ylab="Predicted P(DONR=1)",main="Validation Set")
+```
+
+3. Mailing List Selection
+```{r}
+source(file.path(codePath,"RankedDonorOutput.R"))
+```
+
+a. The mailing list selection strategy illustrated in the sample code requires you to choose a score to rank and
+select a cutoff to use on that score. Evaluate this strategy by ranking various scores and calculating the
+profit obtained on the validation dataset. Scores that you might consider using include the predicted values
+of DONR, PDONR, and EXAMT. Summarize your findings with tables and figures as appropriate.
+```{r}
+# Rank donors by PDONR.Pred
+numBins = 10
+out1 = outputForRankedDonors(numBins,rankVar="PDONR.Pred",dataToRank=valData)
+print(out1$Donor.Table)
+print(out1$Mailing.Table)
+```
+
+
+```{r}
+# Rank donors by EXAMT.Pred (expected donation amount)
+# EXAMT.Pred = PDONR.Pred * DAMT.Pred 
+# (likelihood of donation * predicted donation amount)
+valData$EXAMT.Pred = valData$PDONR.Pred * valData$DAMT.Pred
+out2 = outputForRankedDonors(numBins,rankVar="EXAMT.Pred",dataToRank=valData)
+print(out2$Donor.Table)
+print(out2$Mailing.Table)
+```
+
+
+```{r}
+# Rank donors by DAMT.Pred (predicted donation amount)
+out3 = outputForRankedDonors(numBins,rankVar="DAMT.Pred",dataToRank=valData)
+print(out3$Donor.Table)
+print(out3$Mailing.Table)
+```
+
+
+```{r}
+# Calculate percentiles of breakVals for each profile using the empircal CDF function.
+fn1 = ecdf(out1$breakVals)
+fn2 = ecdf(out2$breakVals)
+fn3 = ecdf(out3$breakVals)
+yLimits = c(-500+1000*floor(min(c(
+              out1$Mailing.Table$Total.Profit,
+              out2$Mailing.Table$Total.Profit,
+              out3$Mailing.Table$Total.Profit
+            ))/1000),
+            500+1000*ceiling(max(c(
+              out1$Mailing.Table$Total.Profit,
+              out2$Mailing.Table$Total.Profit,
+              out3$Mailing.Table$Total.Profit
+            ))/1000))
+plot(fn1(out1$breakVals)[-1],out1$Mailing.Table$Total.Profit,type='b',col="blue",
+     xlab="% Mailed",ylab="Profit ($)",main="Profit Profiles",xlim=c(0,1),ylim=yLimits)
+lines(fn2(out2$breakVals)[-1],out2$Mailing.Table$Total.Profit,col="red")
+points(fn2(out2$breakVals)[-1],out2$Mailing.Table$Total.Profit,col="red",pch=16)
+lines(fn3(out3$breakVals)[-1],out3$Mailing.Table$Total.Profit,col="green")
+points(fn3(out3$breakVals)[-1],out3$Mailing.Table$Total.Profit,col="green",pch=16)
+abline(h=0,lty=2)
+legend(x="bottomleft",legend=c("PDONR","EXAMT","DAMT","Break Even"),
+       col=c("blue","red","green","black"),
+       lty=c(1,1,1,2),pch=c(1,16,16,NA))
+```
+
+
+```{r}
+cutOff = out3$breakVals[numBins+1-2]
+valMailList = data.frame(ID=valData$ID[valData$DAMT.Pred >= cutOff])
+length(valMailList$ID)
+```
+4. Predictions on Test Set
+In this exercise, you will make predictions on the Test Set data provided in testSample.csv. You will then
+select individuals from the Test Set to be mailed in the upcoming charity mailing campaign.
+
+
+a. Repeat Exercise 1 of this assignment applied to the data in testSample.csv.
+```{r}
+testData = read.csv(file.path(inPath,"testSample.csv"),na.strings=c("NA"," "))
+
+testData$HOME = as.factor(testData$HOME)
+testData$HINC = as.factor(testData$HINC)
+```
+
+b. Repeat Exercise 2 of this assignment applied to the data in testSample.csv.
+```{r}
+# Note: The model.matrix method will not allow us to use a dataframe with "missing" 
+# columns. Therefore, we add dummy DAMT and DONR columns to testData.
+testData$DAMT = -1
+testData$DONR = -1
+```
+
+
+```{r}
+## Apply the Part 2 data processing steps to testData
+testDataPart2 = processPart2(testData)
+levels(testDataPart2$RFA_96_A) = c(levels(testDataPart2$RFA_96_A), "B")
+```
+
+
+```{r}
+## Predict DAMT for testData using your chosen model from Part 2
+# Note that the model I am using is a glmnet model.
+x = model.matrix(DAMT ~ .-ID,data=testDataPart2)[,-1]
+testData$DAMT.Pred = as.numeric(predict(modelPart2,newdata = testDataPart2))
+```
+
+
+```{r}
+# Check the predictions as a sanity check
+summary(testData$DAMT.Pred)
+```
+
+
+```{r}
+## Apply the Part 3 data processing steps to valData
+testDataPart3 = processPart3(testData)
+levels(testDataPart3$RFA_96_A) = c(levels(testDataPart3$RFA_96_A), "B")
+
+## Predict DONR and PDONR for valData using your chosen model from Part 3
+# Note that the model I am using is a glm model.
+testData$PDONR.Pred = predict(modelPart3,newdata=testDataPart3,type="response")
+testData$DONR.Pred = assignClass(testData$PDONR.Pred,optThreshPart3)
+
+# Check the predictions as a sanity check
+table(testData$DONR.Pred)
+summary(testData$PDONR.Pred)
+```
+
+c. Write your predictions out to a CSV file called projectPredictionsTEST.csv. This CSV file
+should contain the following columns: ID, DONR, PDONR, and DAMT.
+```{r}
+## Part C - Write Test Set Predictions to CSV File
+# Name the columns in the CSV file ID, DONR, PDONR, DAMT
+testPredOut = data.frame(ID = testData$ID,
+                         DONR = testData$DONR.Pred,
+                         PDONR = testData$PDONR.Pred,
+                         DAMT = testData$DAMT.Pred)
+
+outPath = file.path("C:\\playground\\Predict422\\Project\\Part4\\")
+
+write.csv(testPredOut,file=file.path(outPath,"projectPredictionsTEST.csv"),row.names=FALSE)
+```
+
+d. Apply the mailing list selection strategy that you chose in Exercise 3b to the Test Set.
+```{r}
+# Use cutoff selected above.
+testMailList = data.frame(ID=testData$ID[testData$DAMT.Pred >= cutOff])
+length(testMailList$ID)
+```
+e. Write the ID numbers of individuals selected for the mailing list to a CSV file called
+projectListTEST.csv. This CSV file needs only a single column: ID.
+
+```{r}
+write.csv(testMailList,file=file.path(outPath,"projectListTEST.csv"),row.names=FALSE)
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+

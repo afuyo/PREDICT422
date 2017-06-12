@@ -1,0 +1,313 @@
+---
+title: "PREDICT 422 Assignment 2"
+author: "Artur Mrozowski"
+date: "April 2, 2017"
+output: pdf_document
+---
+
+PREDICT 422
+Programming Assignment 2
+
+Excercise 9 (ISLR Section 10.7)
+
+
+```{r, results='hide'}
+library(ISLR)
+set.seed(2)
+```
+9(a)
+Using hierarchical clustering with complete linkage and
+Euclidean distance, cluster the states.
+```{r}
+hc.complete = hclust(dist(USArrests), method="complete")
+plot(hc.complete)
+
+```
+9(b)
+Cut the dendrogram at a height that results in three distinct
+clusters. Which states belong to which clusters?
+
+```{r}
+cutree(hc.complete, 3)
+
+table(cutree(hc.complete, 3))
+```
+9(c)Hierarchically cluster the states using complete linkage and Euclidean
+distance, after scaling the variables to have standard deviation
+one.
+```{r}
+dsc = scale(USArrests)
+hc.s.complete = hclust(dist(dsc), method="complete")
+plot(hc.s.complete)
+```
+9(d)
+What effect does scaling the variables have on the hierarchical
+clustering obtained? In your opinion, should the variables be
+scaled before the inter-observation dissimilarities are computed?
+Provide a justification for your answer.
+```{r}
+cutree(hc.s.complete, 3)
+table(cutree(hc.s.complete, 3))
+table(cutree(hc.s.complete, 3), cutree(hc.complete, 3))
+```
+
+Scaling the variables effects the max height of the dendogram obtained from hierarchical clustering. From a cursory glance, it doesn't effect the bushiness of the tree obtained. However, it does affect the clusters obtained from cutting the dendogram into 3 clusters. UrbanPop is variable describing percent of population in urban area and is not comparable to number of assault per 100000. Variables should be scaled to have standard mean and deviation. 
+
+10.
+
+(a) Generate a simulated data set with 20 observations in each of
+three classes (i.e. 60 observations total), and 50 variables.
+Hint: There are a number of functions in R that you can use to
+generate data. One example is the rnorm() function; runif() is
+another option. Be sure to add a mean shift to the observations
+in each class so that there are three distinct classes.
+```{r results='hide'}
+set.seed(2)
+x = matrix(rnorm(20*3*50, mean=0, sd=0.001), ncol=50)
+x[1:20, 2] = 1
+x[21:40, 1] = 2
+x[21:40, 2] = 2
+x[41:60, 1] = 1
+```
+(b) Perform PCA on the 60 observations and plot the first two principal
+component score vectors. Use a different color to indicate
+the observations in each of the three classes.
+
+```{r, results='hide'}
+pca.out = prcomp(x)
+summary(pca.out)
+pca.out$x[,1:2]
+```
+
+```{r}
+plot(pca.out$x[,1:2], col=2:4, xlab="Z1", ylab="Z2", pch=19) 
+```
+(c)
+Perform K-means clustering of the observations with K = 3.
+How well do the clusters that you obtained in K-means clustering
+compare to the true class labels?
+```{r}
+km.out = kmeans(x, 3, nstart=20)
+table(km.out$cluster, c(rep(1,20), rep(2,20), rep(3,20)))
+```
+(d)
+Perform K-means clustering with K = 2.
+```{r results='hide'}
+km.out = kmeans(x, 2, nstart=20)
+km.out$cluster
+
+```
+One of the previous classes absored into the other. 
+```{r}
+table(km.out$cluster)
+```
+(e) Now perform K-means clustering with K = 4, and describe your
+results.
+
+```{r}
+km.out = kmeans(x, 4, nstart=20)
+km.out$cluster
+```
+One of the clusters split into two.
+```{r}
+table(km.out$cluster)
+```
+(f)
+Now perform K-means clustering with K = 3 on the first two
+principal component score vectors, rather than on the raw data.
+```{r}
+km.out = kmeans(pca.out$x[,1:2], 3, nstart=20)
+table(km.out$cluster, c(rep(1,20), rep(2,20), rep(3,20)))
+```
+Perfect match just like before
+```{r}
+
+```
+(g)
+Using the scale() function, perform K-means clustering with
+K = 3 on the data after scaling each variable to have standard
+deviation one. How do these results compare to those obtained
+in (b)? Explain.
+```{r}
+km.out = kmeans(scale(x), 3, nstart=20)
+km.out$cluster
+table(km.out$cluster, c(rep(1,20), rep(2,20), rep(3,20)))
+```
+The classification is not as distinct as in b. The scale function evenes out the distances between points.
+
+
+
+Chapter 3
+9
+(a) Produce a scatterplot matrix which includes all of the variables
+in the data set.
+```{r}
+pairs(Auto)
+```
+(b) Compute the matrix of correlations between the variables using
+the function cor(). You will need to exclude the name variable,
+cor()
+which is qualitative.
+
+```{r}
+cor(subset(Auto, select=-name))
+```
+(c) Use the lm() function to perform a multiple linear regression
+with mpg as the response and all other variables except name as
+the predictors. Use the summary() function to print the results.
+Comment on the output. For instance:
+i. Is there a relationship between the predictors and the response?
+ii. Which predictors appear to have a statistically significant
+relationship to the response?
+iii. What does the coefficient for the year variable suggest?
+```{r}
+lm.fit1 = lm(mpg~.-name, data=Auto)
+summary(lm.fit1)
+```
+i.
+Yes there is a relationship between predictors and response. From F statistics we can reject the null hypothesis that the all predictor variable coefficients are equal to zero. F=252.4 and p-value 2.2e-16. 
+
+ii.
+Looking at the p-values associated with each predictor's t-statistic, we see that displacement, weight, year, and origin have a statistically significant relationship, while cylinders, horsepower, and acceleration do not.
+
+iii.
+The year coefficient 0.75 indicates that each year the cars become more and more efficient. 
+
+
+
+(d)
+(d) Use the plot() function to produce diagnostic plots of the linear
+regression fit. Comment on any problems you see with the fit.
+Do the residual plots suggest any unusually large outliers? Does
+the leverage plot identify any observations with unusually high
+leverage?
+```{r}
+par(mfrow=c(2,2))
+plot(lm.fit1)
+```
+The analysis of Q-Q plot reveals that the right tail is a littble bit thick which indicates that there may be outliers. 
+The analysis of residuals indicates that there is a curve pattern in the residual plot which may indicate non linear realtionship not explained by the model. That might require transformation of some of the variables. 
+
+From the leverage plot point 14 has high leverage which means that the observation is influential. There seems to be a few outliers higher than 2 and lower than -2 
+
+(e)
+Use the * and : symbols to fit linear regression models with
+interaction effects. Do any interactions appear to be statistically
+significant?
+```{r}
+lm.fit2 = lm(mpg~cylinders*displacement+displacement*weight, data=Auto[,1:8])
+summary(lm.fit2)
+```
+From the p-values, we can see that the interaction between displacement and weight is statistically signifcant, while the interactiion between cylinders and displacement is not.
+
+(f)
+(f) Try a few different transformations of the variables, such as
+log(X),sqrt
+X, X2. Comment on your findings.
+```{r}
+attach(Auto)
+lm.fit3 = lm(mpg~log(weight)+sqrt(horsepower)+acceleration+I(acceleration^2))
+summary(lm.fit3)
+
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(lm.fit3)
+```
+
+```{r}
+plot(predict(lm.fit3), rstudent(lm.fit3))
+```
+2 problems are observed from the above plots: 1) the residuals vs fitted plot indicates heteroskedasticity (unconstant variance over mean) in the model. 2) The Q-Q plot indicates somewhat unnormality of the residuals.
+
+From the correlation matrix in 9a., displacement, horsepower and weight show a similar nonlinear pattern against our response mpg. This nonlinear pattern is very close to a log form.
+```{r}
+lm.fit2<-lm(log(mpg)~cylinders+displacement+horsepower+weight+acceleration+year+origin,data=Auto)
+summary(lm.fit2)
+```
+
+```{r}
+par(mfrow=c(2,2)) 
+plot(lm.fit2)
+```
+
+```{r}
+plot(predict(lm.fit2),rstudent(lm.fit2))
+```
+Chapter 3
+10 
+(a) Fit a multiple regression model to predict Sales using Price,
+Urban, and US.
+```{r}
+
+summary(Carseats)
+attach(Carseats)
+lm.fit = lm(Sales~Price+Urban+US)
+summary(lm.fit)
+```
+(b) Provide an interpretation of each coefficient in the model. Be
+careful-some of the variables in the model are qualitative!
+
+Price
+The linear regression suggests a relationship between price and sales given the low p-value of the t-statistic. The coefficient states a negative relationship between Price and Sales: as Price increases, Sales decreases.
+
+UrbanYes
+The linear regression suggests that there isn't a relationship between the location of the store and the number of sales based on the high p-value of the t-statistic.
+
+USYes
+The linear regression suggests there is a relationship between whether the store is in the US or not and the amount of sales. The coefficient states a positive relationship between USYes and Sales: if the store is in the US, the sales will increase by approximately 1201 units.
+```{r}
+
+```
+(c) Write out the model in equation form, being careful to handle
+the qualitative variables properly.
+
+Sales = 13.04 + -0.05 Price + -0.02 UrbanYes + 1.20 USYes
+```{r}
+
+```
+(d) For which of the predictors can you reject the null hypothesi H0 : Bj = 0?
+Price and USYes, based on the p-values, F-statistic, and p-value of the F-statistic.
+```{r}
+
+```
+(e) On the basis of your response to the previous question, fit a
+smaller model that only uses the predictors for which there is
+evidence of association with the outcome.
+```{r}
+lm.fit2 = lm(Sales ~ Price + US)
+summary(lm.fit2)
+```
+(f) How well do the models in (a) and (e) fit the data?
+
+Based on the RSE and R^2 of the linear regressions, they both fit the data similarly, with linear regression from (e) fitting the data slightly better.
+```{r}
+
+```
+
+(g) Using the model from (e), obtain 95% confidence intervals for
+the coefficient(s).
+```{r}
+confint(lm.fit2)
+```
+(h) Is there evidence of outliers or high leverage observations in the
+model from (e)?
+```{r}
+plot(predict(lm.fit2), rstudent(lm.fit2))
+```
+Analysis of studentized residuals reveals no outliers. All the values are within range of -3 to 3. 
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

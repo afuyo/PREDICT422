@@ -1,0 +1,484 @@
+---
+title: "PREDICT422-Assignment4 Classification"
+author: "Artur Mrozowski"
+date: "May 21, 2017"
+output: pdf_document
+---
+Chapter 4 ISLR
+11. In this problem, you will develop a model to predict whether a given
+car gets high or low gas mileage based on the Auto data set.
+(a) Create a binary variable, mpg01, that contains a 1 if mpg contains
+a value above its median, and a 0 if mpg contains a value below
+its median. You can compute the median using the median()
+function. Note you may find it helpful to use the data.frame()
+function to create a single data set containing both mpg01 and
+the other Auto variables.
+```{r}
+library(ISLR)
+summary(Auto)
+```
+(b) Explore the data graphically in order to investigate the association
+between mpg01 and the other features. Which of the other
+features seem most likely to be useful in predicting mpg01? Scatterplots
+and boxplots may be useful tools to answer this question.
+Describe your findings.
+```{r}
+attach(Auto)
+mpg01 = rep(0, length(mpg))
+mpg01[mpg > median(mpg)] = 1
+Auto = data.frame(Auto, mpg01)
+```
+
+
+```{r}
+cor(Auto[, -9])
+```
+
+```{r}
+pairs(Auto)  # doesn't work well since mpg01 is 0 or 1
+```
+(c) Split the data into a training set and a test set.
+```{r}
+train = (year%%2 == 0)  # if the year is even
+test = !train
+Auto.train = Auto[train, ]
+Auto.test = Auto[test, ]
+mpg01.test = mpg01[test]
+```
+(d) Perform LDA on the training data in order to predict mpg01
+using the variables that seemed most associated with mpg01 in
+(b). What is the test error of the model obtained?
+```{r}
+# LDA
+library(MASS)
+lda.fit = lda(mpg01 ~ cylinders + weight + displacement + horsepower, data = Auto, 
+    subset = train)
+lda.pred = predict(lda.fit, Auto.test)
+mean(lda.pred$class != mpg01.test)
+```
+12.6% test error rate.
+
+(e) Perform QDA on the training data in order to predict mpg01
+using the variables that seemed most associated with mpg01 in
+(b). What is the test error of the model obtained?
+
+```{r}
+# QDA
+qda.fit = qda(mpg01 ~ cylinders + weight + displacement + horsepower, data = Auto, 
+    subset = train)
+qda.pred = predict(qda.fit, Auto.test)
+mean(qda.pred$class != mpg01.test)
+```
+
+13.2% test error rate.
+
+(f) Perform logistic regression on the training data in order to predict
+mpg01 using the variables that seemed most associated with
+mpg01 in (b). What is the test error of the model obtained?
+```{r}
+# Logistic regression
+glm.fit = glm(mpg01 ~ cylinders + weight + displacement + horsepower, data = Auto, 
+    family = binomial, subset = train)
+glm.probs = predict(glm.fit, Auto.test, type = "response")
+glm.pred = rep(0, length(glm.probs))
+glm.pred[glm.probs > 0.5] = 1
+mean(glm.pred != mpg01.test)
+```
+12.1% test error rate.
+
+(g) Perform KNN on the training data, with several values of K, in
+order to predict mpg01. Use only the variables that seemed most
+associated with mpg01 in (b). What test errors do you obtain?
+Which value of K seems to perform the best on this data set?
+```{r}
+library(class)
+train.X = cbind(cylinders, weight, displacement, horsepower)[train, ]
+test.X = cbind(cylinders, weight, displacement, horsepower)[test, ]
+train.mpg01 = mpg01[train]
+set.seed(1)
+# KNN(k=1)
+knn.pred = knn(train.X, test.X, train.mpg01, k = 1)
+mean(knn.pred != mpg01.test)
+```
+
+```{r}
+# KNN(k=10)
+knn.pred = knn(train.X, test.X, train.mpg01, k = 10)
+mean(knn.pred != mpg01.test)
+```
+
+
+```{r}
+# KNN(k=100)
+knn.pred = knn(train.X, test.X, train.mpg01, k = 100)
+mean(knn.pred != mpg01.test)
+```
+k=1, 15.4% test error rate. k=10, 16.5% test error rate. k=100, 14.3% test error rate. K of 100 seems to perform the best. 100 nearest neighbors.
+
+
+
+13. Using the Boston data set, fit classification models in order to predict
+whether a given suburb has a crime rate above or below the median.
+Explore logistic regression, LDA, and KNN models using various subsets
+of the predictors. Describe your findings.
+```{r}
+library(MASS)
+summary(Boston)
+```
+
+```{r}
+attach(Boston)
+crime01 = rep(0, length(crim))
+crime01[crim > median(crim)] = 1
+Boston = data.frame(Boston, crime01)
+
+train = 1:(dim(Boston)[1]/2)
+test = (dim(Boston)[1]/2 + 1):dim(Boston)[1]
+Boston.train = Boston[train, ]
+Boston.test = Boston[test, ]
+crime01.test = crime01[test]
+```
+
+```{r}
+# logistic regression
+glm.fit = glm(crime01 ~ . - crime01 - crim, data = Boston, family = binomial, 
+    subset = train)
+```
+
+
+```{r}
+glm.probs = predict(glm.fit, Boston.test, type = "response")
+glm.pred = rep(0, length(glm.probs))
+glm.pred[glm.probs > 0.5] = 1
+mean(glm.pred != crime01.test)
+```
+18.2% test error rate.
+```{r}
+glm.fit = glm(crime01 ~ . - crime01 - crim - chas - tax, data = Boston, family = binomial, 
+    subset = train)
+```
+
+
+```{r}
+glm.probs = predict(glm.fit, Boston.test, type = "response")
+glm.pred = rep(0, length(glm.probs))
+glm.pred[glm.probs > 0.5] = 1
+mean(glm.pred != crime01.test)
+```
+18.6% test error rate.
+```{r}
+# LDA
+lda.fit = lda(crime01 ~ . - crime01 - crim, data = Boston, subset = train)
+lda.pred = predict(lda.fit, Boston.test)
+mean(lda.pred$class != crime01.test)
+```
+
+13.4% test error rate.
+```{r}
+lda.fit = lda(crime01 ~ . - crime01 - crim - chas - tax, data = Boston, subset = train)
+lda.pred = predict(lda.fit, Boston.test)
+mean(lda.pred$class != crime01.test)
+```
+
+12.3% test error rate.
+```{r}
+lda.fit = lda(crime01 ~ . - crime01 - crim - chas - tax - lstat - indus - age, 
+    data = Boston, subset = train)
+lda.pred = predict(lda.fit, Boston.test)
+mean(lda.pred$class != crime01.test)
+```
+11.9% test error rate.
+```{r}
+# KNN
+library(class)
+train.X = cbind(zn, indus, chas, nox, rm, age, dis, rad, tax, ptratio, black, 
+    lstat, medv)[train, ]
+test.X = cbind(zn, indus, chas, nox, rm, age, dis, rad, tax, ptratio, black, 
+    lstat, medv)[test, ]
+train.crime01 = crime01[train]
+set.seed(1)
+# KNN(k=1)
+knn.pred = knn(train.X, test.X, train.crime01, k = 1)
+mean(knn.pred != crime01.test)
+```
+45.8% test error rate.
+```{r}
+# KNN(k=10)
+knn.pred = knn(train.X, test.X, train.crime01, k = 10)
+mean(knn.pred != crime01.test)
+```
+11.1% test error rate.
+
+```{r}
+# KNN(k=100)
+knn.pred = knn(train.X, test.X, train.crime01, k = 100)
+mean(knn.pred != crime01.test)
+```
+49.0% test error rate.
+```{r}
+# KNN(k=10) with subset of variables
+train.X = cbind(zn, nox, rm, dis, rad, ptratio, black, medv)[train, ]
+test.X = cbind(zn, nox, rm, dis, rad, ptratio, black, medv)[test, ]
+knn.pred = knn(train.X, test.X, train.crime01, k = 10)
+mean(knn.pred != crime01.test)
+```
+28.5% test error rate.
+```{r}
+
+```
+Chapter 8 ISLR
+8. In the lab, a classification tree was applied to the Carseats data set after
+converting Sales into a qualitative response variable. Now we will
+seek to predict Sales using regression trees and related approaches,
+treating the response as a quantitative variable.
+
+(a) Split the data set into a training set and a test set.
+```{r}
+library(ISLR)
+attach(Carseats)
+set.seed(1)
+
+train = sample(dim(Carseats)[1], dim(Carseats)[1]/2)
+Carseats.train = Carseats[train, ]
+Carseats.test = Carseats[-train, ]
+```
+
+(b) Fit a regression tree to the training set. Plot the tree, and interpret
+the results. What test MSE do you obtain?
+```{r}
+library(tree)
+tree.carseats = tree(Sales ~ ., data = Carseats.train)
+summary(tree.carseats)
+```
+
+```{r}
+plot(tree.carseats)
+text(tree.carseats, pretty = 0)
+```
+
+```{r}
+pred.carseats = predict(tree.carseats, Carseats.test)
+mean((Carseats.test$Sales - pred.carseats)^2)
+```
+The test MSE is about 4.15
+
+(c) Use cross-validation in order to determine the optimal level of
+tree complexity. Does pruning the tree improve the test MSE?
+```{r}
+cv.carseats = cv.tree(tree.carseats, FUN = prune.tree)
+par(mfrow = c(1, 2))
+plot(cv.carseats$size, cv.carseats$dev, type = "b")
+plot(cv.carseats$k, cv.carseats$dev, type = "b")
+```
+
+```{r}
+# Best size = 9
+pruned.carseats = prune.tree(tree.carseats, best = 9)
+par(mfrow = c(1, 1))
+plot(pruned.carseats)
+text(pruned.carseats, pretty = 0)
+```
+
+
+```{r}
+pred.pruned = predict(pruned.carseats, Carseats.test)
+mean((Carseats.test$Sales - pred.pruned)^2)
+```
+Pruning the tree in this case increases the test MSE to 4.99
+
+(d) Use the bagging approach in order to analyze this data. What
+test MSE do you obtain? Use the importance() function to determine
+which variables are most important.
+```{r}
+library(randomForest)
+```
+
+
+```{r}
+bag.carseats = randomForest(Sales ~ ., data = Carseats.train, mtry = 10, ntree = 500, 
+    importance = T)
+bag.pred = predict(bag.carseats, Carseats.test)
+mean((Carseats.test$Sales - bag.pred)^2)
+```
+
+```{r}
+importance(bag.carseats)
+```
+Bagging improves the test MSE to 2.58 We also see that Price, ShelveLoc and Age are three most important predictors of Sale.
+
+(e) Use random forests to analyze this data. What test MSE do you
+obtain? Use the importance() function to determine which variables
+aremost important. Describe the effect of m, the number of
+variables considered at each split, on the error rate
+obtained.
+```{r}
+rf.carseats = randomForest(Sales ~ ., data = Carseats.train, mtry = 5, ntree = 500, 
+    importance = T)
+rf.pred = predict(rf.carseats, Carseats.test)
+mean((Carseats.test$Sales - rf.pred)^2)
+```
+
+```{r}
+importance(rf.carseats)
+```
+
+In this case, random forest worsens the MSE on test set to 2.87 Changing mm varies test MSE between 2.6 to 33. We again see that PricePrice, ShelveLocS and AgeA are three most important predictors of Sale.
+
+9. This problem involves the OJ data set which is part of the ISLR
+package.
+(a) Create a training set containing a random sample of 800 observations,
+and a test set containing the remaining observations.
+```{r}
+library(ISLR)
+attach(OJ)
+set.seed(1013)
+
+train = sample(dim(OJ)[1], 800)
+OJ.train = OJ[train, ]
+OJ.test = OJ[-train, ]
+```
+(b) Fit a tree to the training data, with Purchase as the response
+and the other variables except for Buy as predictors. Use the
+summary() function to produce summary statistics about the
+tree, and describe the results obtained. What is the training
+error rate? How many terminal nodes does the tree have?
+```{r}
+library(tree)
+oj.tree = tree(Purchase ~ ., data = OJ.train)
+summary(oj.tree)
+```
+The tree only uses two variables: LoyalCH and PriceDiff. It has 7 terminal nodes. Training error rate (misclassification error) for the tree is 0.155
+
+(c) Type in the name of the tree object in order to get a detailed
+text output. Pick one of the terminal nodes, and interpret the
+information displayed.
+```{r}
+oj.tree
+```
+Let's pick terminal node labeled "10)". The splitting variable at this node is PriceDiffPriceDiff. The splitting value of this node is 0.05. There are 79 points in the subtree below this node. The deviance for all points contained in region below this node is 80. A * in the line denotes that this is in fact a terminal node. The prediction at this node is Sales = MM. About 19% points in this node have CH as value of Sales. Remaining 81% points have MM as value of Sales.
+
+(d) Create a plot of the tree, and interpret the results.
+```{r}
+
+```
+LoyalCH is the most important variable of the tree, in fact top 3 nodes contain LoyalCH. If LoyalCH<0.27, the tree predicts MM. If LoyalCH>0.76, the tree predicts CH. For intermediate values of LoyalCH, the decision also depends on the value of PriceDiff.
+
+(e) Predict the response on the test data, and produce a confusion
+matrix comparing the test labels to the predicted test labels.
+What is the test error rate?
+
+```{r}
+oj.pred = predict(oj.tree, OJ.test, type = "class")
+table(OJ.test$Purchase, oj.pred)
+```
+(f) Apply the cv.tree() function to the training set in order to
+determine the optimal tree size.
+```{r}
+cv.oj = cv.tree(oj.tree, FUN = prune.tree)
+```
+(g) Produce a plot with tree size on the x-axis and cross-validated
+classification error rate on the y-axis.
+```{r}
+plot(cv.oj$size, cv.oj$dev, type = "b", xlab = "Tree Size", ylab = "Deviance")
+```
+(h) Which tree size corresponds to the lowest cross-validated classification
+error rate?
+
+Size of 6 gives lowest cross-validation error.
+
+
+(i) Produce a pruned tree corresponding to the optimal tree size
+obtained using cross-validation. If cross-validation does not lead
+to selection of a pruned tree, then create a pruned tree with five
+terminal nodes.
+```{r}
+oj.pruned = prune.tree(oj.tree, best = 6)
+```
+
+(j) Compare the training error rates between the pruned and unpruned
+trees. Which is higher?
+```{r}
+summary(oj.pruned)
+```
+Misclassification error of pruned tree is exactly same as that of original tree - 0.155.
+
+(k) Compare the test error rates between the pruned and unpruned
+trees. Which is higher?
+```{r}
+pred.unpruned = predict(oj.tree, OJ.test, type = "class")
+misclass.unpruned = sum(OJ.test$Purchase != pred.unpruned)
+misclass.unpruned/length(pred.unpruned)
+```
+
+
+```{r}
+pred.pruned = predict(oj.pruned, OJ.test, type = "class")
+misclass.pruned = sum(OJ.test$Purchase != pred.pruned)
+misclass.pruned/length(pred.pruned)
+```
+Pruned and unpruned trees have same test error rate of 0.189.
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+

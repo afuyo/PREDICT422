@@ -1,0 +1,137 @@
+Variable                    Description
+--------------------------  -------------------------------------------------
+
+ID		            Control number (unique record identifier)
+
+DONR	                    Classification Target Variable: 
+			    Binary Indicator for Response to Mailing
+
+DAMT	                    Regression Target Variable: 
+			    Donation Amount (in $) associated with Response to Mailing
+
+--------------------------  ------------------------------------------
+                            
+AGE                         Age 
+                           
+HOMEOWNR                    Home Owner Flag
+                            1 = Home owner 
+                            0 = Not a home owner
+                           
+HINC	                    Household Income
+			    Categories 1 through 7
+
+GENDER                      Gender
+                            M = Male
+                            F = Female
+                            U = Unknown
+                            J = Joint Account, unknown gender
+
+--------------------------  -------------------------------------------------
+                           
+                            The following variables reflect characteristics 
+                            of the donor's neighborhood, as collected from the 
+                            1990 US Census.
+                           
+MEDAGE                      Median Age of Adults 18 or Older
+
+MEDPPH                      Median Person Per Household
+
+MEDHVAL                     Median Home Value in hundreds
+
+MEDINC                      Median Household Income in hundreds
+
+MEDEDUC	  	            Median Years of School Completed by Adults 25+
+                           
+--------------------------  -------------------------------------------------
+                            The following fields are summary variables from
+                            the promotion history file. 
+
+NUMPROM                     Lifetime number of promotions received to date
+
+NUMPRM12                    Number of promotions received in the last 12
+                            months (in terms of calendar months translates 
+                            into 9603-9702)
+
+--------------------------  -------------------------------------------------
+                            The following fields are summary variables from
+                            the giving history file. 
+
+RAMNTALL                    Dollar amount of lifetime gifts to date
+
+NGIFTALL                    Number of lifetime gifts to date
+
+MAXRAMNT                    Dollar amount of largest gift to date              
+
+LASTGIFT                    Dollar amount of most recent gift            
+
+TDON	                    Number of months since the most recent gift               
+
+--------------------------  -------------------------------------------------
+
+                            RFA (RECENCY/FREQUENCY/AMOUNT)
+                            ------------------------------
+ 
+                            The RFA (recency/frequency/amount) status of the 
+                            donors (as of the promotion dates) is included in the 
+                            RFA fields.
+ 
+                            The (current) concatenated version is a nominal 
+                            or symbolic field. The individual bytes could 
+                            separately be used as fields and refer to the 
+                            following: 
+
+                            First Byte of code is concerned with RECENCY
+                            based on Date of the last Gift
+
+                            F=FIRST TIME DONOR Anyone who has made their
+                              first donation in the last 6 months and has
+                              made just one donation.
+
+                            N=NEW DONOR Anyone who has made their first
+                              donation in the last 12 months and is not a
+                              First time donor.  This is everyone who made
+                              their first donation 7-12 months ago, or
+                              people who made their first donation between
+                              0-6 months ago and have made 2 or more
+                              donations.
+
+                            A=ACTIVE DONOR Anyone who made their first
+                              donation more than 12 months ago and has made
+                              a donation in the last 12 months.
+
+                            L=LAPSING DONOR A previous donor who made their
+                              last donation between 13-24 months ago.
+
+                            I=INACTIVE DONOR A previous donor who has not
+                              made a donation in the last 24 months.  It is
+                              people who made a donation 25+ months ago.
+
+                            S=STAR DONOR STAR Donors are individuals who
+                              have given to 3 consecutive card mailings.
+
+
+                            Second Byte of code is concerned with FREQUENCY
+                            based on the period of recency.  The period of
+                            recency for all groups except L and I is the
+                            last 12 months.  For L it is 13-24 months ago,
+                            and for I it is 25-36 months ago.  There are
+                            four valid frequency codes.
+
+                            1=One gift in the period of recency 
+                            2=Two gift in the period of recency 
+                            3=Three gifts in the period of recency 
+                            4=Four or more gifts in the period of recency
+
+                            Third byte of the code is the Amount of the last
+                            gift.
+
+                            A=$0.01  -  $1.99
+                            B=$2.00  -  $2.99
+                            C=$3.00  -  $4.99
+                            D=$5.00  -  $9.99
+                            E=$10.00 - $14.99
+                            F=$15.00 - $24.99
+                            G=$25.00 and above
+
+
+RFA_96                      Donor's RFA status as of 1996 promotion date  
